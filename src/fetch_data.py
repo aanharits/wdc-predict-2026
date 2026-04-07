@@ -2,79 +2,58 @@ import fastf1
 import pandas as pd
 import os
 
-# ==========================================
-# Konfigurasi Direktori
-# ==========================================
-# Menggunakan absolute path relatif terhadap letak script 
-# agar aman dijalankan dari folder manapun
+# Setup path biar script bisa di-run dari mana aja
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 CACHE_DIR = os.path.join(DATA_DIR, 'f1_cache')
 
-# Memastikan folder direktori ada sebelum script mulai mengunduh data
+# Bikin folder kalau belum ada
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# Mengaktifkan cache penyimpanan fastf1.
-# Penggunaan cache sangat krusial dalam library fastf1 agar API tidak
-# mendownload data yang sama berulang kali saat script dijalankan ulang.
+# Enable cache. Penting banget biar pas run ulang gak usah download API dari awal
 fastf1.Cache.enable_cache(CACHE_DIR)
 
 def fetch_and_clean_f1_data(seasons):
-    """
-    Fungsi utama untuk mengambil dan melakukan pembersihan data dasar hasil 
-    Balapan dan Kualifikasi pada rentang musim yang ditentukan.
-    Hasil akhirnya disatukan ke dalam satu file CSV gabungan per jenis sesi.
-    """
+    # Tampungan sementara buat dataframe
     race_results_list = []
     quali_results_list = []
     
     for year in seasons:
-        print(f"==========================================")
-        print(f"Memulai pengambilan data musim {year}...")
-        print(f"==========================================")
+        print(f"Fetching season {year}...")
         
         try:
-            # Mengambil jadwal dari seluruh rangkaian event resmi untuk musim `year`
+            # Ambil jadwal balapan di tahun berjalan
             schedule = fastf1.get_event_schedule(year)
             
-            # Memfilter hanya ronde reguler (RoundNumber > 0).
-            # Fungsi ini otomatis akan mengabaikan pre-season testing yang berindeks 0
+            # Ambil ronde reguler aja, abaikan ronde 0 (pre-season testing)
             rounds = schedule[schedule['RoundNumber'] > 0]['RoundNumber'].tolist()
             
             for round_num in rounds:
-                print(f"Processing Musim {year} - Ronde {round_num}...")
+                print(f"  Round {round_num}...")
                 
-                # ----------------------------------------------------
-                # 1. Mengambil Data Kualifikasi ('Q' - Qualifying)
-                # ----------------------------------------------------
+                # --- 1. Qualifying ---
                 try:
-                    # Ambil object sesi Kualifikasi
                     quali_session = fastf1.get_session(year, round_num, 'Q')
                     
-                    # Load data. Argumen telemetry, laps, dan weather 
-                    # di-set False agar proses download menjadi jauh lebih cepat
-                    # karena kita hanya peduli pada posisi akhir pembalap (Results).
+                    # Set False buat telemetry dkk biar cepet, soalnya cuma butuh hasil posisi
                     quali_session.load(telemetry=False, laps=False, weather=False)
                     
-                    # Validasi jika datanya ada
+                    # Pastikan datanya gak kosong
                     if quali_session.results is not None and not quali_session.results.empty:
                         q_df = quali_session.results.copy()
                         
-                        # Menambahkan kolom penanda dari musim & nama event terkait
+                        # Tambahin metadata
                         q_df['Season'] = year
                         q_df['Round'] = round_num
                         q_df['EventName'] = quali_session.event['EventName']
                         
                         quali_results_list.append(q_df)
                 except Exception as e:
-                    print(f" -> [WARNING] Gagal mengambil data kualifikasi musim {year} ronde {round_num}: {e}")
+                    print(f"  [!] Gagal ambil Q {year}-{round_num}: {e}")
                 
-                # ----------------------------------------------------
-                # 2. Mengambil Data Balapan Utama ('R' - Race)
-                # ----------------------------------------------------
+                # --- 2. Race ---
                 try:
-                    # Ambil object sesi Balapan Utama
                     race_session = fastf1.get_session(year, round_num, 'R')
                     race_session.load(telemetry=False, laps=False, weather=False)
                     
@@ -87,40 +66,31 @@ def fetch_and_clean_f1_data(seasons):
                         
                         race_results_list.append(r_df)
                 except Exception as e:
-                    print(f" -> [WARNING] Gagal mengambil data balapan musim {year} ronde {round_num}: {e}")
+                    print(f"  [!] Gagal ambil R {year}-{round_num}: {e}")
                     
         except Exception as e:
-            print(f" -> [ERROR] Gagal memuat jadwal musim {year}: {e}")
+            print(f"[!] Gagal load jadwal {year}: {e}")
 
-    # ==========================================
-    # Tahap Pembersihan Dasar & Penyimpanan Data
-    # ==========================================
-    print("\nProses pengambilan selesai. Menyatukan frame data...")
+    print("\nMerging data...")
     
-    # Memproses Data Balapan
+    # Save Race Data
     if race_results_list:
         final_race_df = pd.concat(race_results_list, ignore_index=True)
-        # Pembersihan Data: Membuang baris atau kolom yang keseluruhan nilainya NA
+        # Buang kolom yang semua isinya beneran kosong biar lebih rapi
         final_race_df = final_race_df.dropna(how='all', axis=1)
         
         race_csv_path = os.path.join(DATA_DIR, 'race_results.csv')
         final_race_df.to_csv(race_csv_path, index=False)
-        print(f"[SUCCESS] Data Balapan disimpan ke {race_csv_path} ({len(final_race_df)} baris)")
-    else:
-        print("[INFO] Tidak ada data Balapan yang berhasil diproses.")
+        print(f"Saved: {race_csv_path} ({len(final_race_df)} rows)")
         
-    # Memproses Data Kualifikasi
+    # Save Quali Data
     if quali_results_list:
         final_quali_df = pd.concat(quali_results_list, ignore_index=True)
         final_quali_df = final_quali_df.dropna(how='all', axis=1)
         
         quali_csv_path = os.path.join(DATA_DIR, 'qualifying_results.csv')
         final_quali_df.to_csv(quali_csv_path, index=False)
-        print(f"[SUCCESS] Data Kualifikasi disimpan ke {quali_csv_path} ({len(final_quali_df)} baris)")
-    else:
-        print("[INFO] Tidak ada data Kualifikasi yang berhasil diproses.")
+        print(f"Saved: {quali_csv_path} ({len(final_quali_df)} rows)")
 
 if __name__ == "__main__":
-    # Menentukan musim balapan mana saja yang akan diambil datanya (2024 & 2025)
-    SEASONS_TO_FETCH = [2024, 2025]
-    fetch_and_clean_f1_data(SEASONS_TO_FETCH)
+    fetch_and_clean_f1_data([2024, 2025])

@@ -1,0 +1,11 @@
+# Python environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Data & Cache (Jangan di-upload karena terlalu besar)
+data/f1_cache/
+*.sqlite
+
+# OS files
+.DS_Store

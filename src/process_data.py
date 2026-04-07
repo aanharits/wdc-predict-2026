@@ -44,11 +44,11 @@ def process_data():
     df_merged['FinalPosition'] = df_merged[final_pos_col]
     
     # --- Data Cleaning ---;
-    # Konversi result atribut posisi dari tipe String menjadi Integer/Numerik murni.
+    # Konversi result atribut posisi dari tipe String menjadi Integer/Numerik.
     df_merged['FinalPosition'] = pd.to_numeric(df_merged['FinalPosition'], errors='coerce')
     df_merged['GridPosition'] = pd.to_numeric(df_merged['GridPosition'], errors='coerce')
     
-    # Menggunakan metode imputasi di mana tipe record NaN (gagal finish, absen, dsb) didefault ke urutan 20.
+    # Menggunakan metode imputasi di mana tipe record NaN (DNS, DNF, absen, dsb) didefault ke urutan 20.
     df_merged['FinalPosition'] = df_merged['FinalPosition'].fillna(20).astype(int)
     df_merged['GridPosition'] = df_merged['GridPosition'].fillna(20).astype(int)
     

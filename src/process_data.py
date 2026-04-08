@@ -36,8 +36,10 @@ def process_data():
         grid_col = 'Position_quali' if 'Position_quali' in df_merged.columns else 'Position'
         
     final_pos_col = 'Position_race' if 'Position_race' in df_merged.columns else 'Position'
+    event_col = 'EventName_race' if 'EventName_race' in df_merged.columns else 'EventName'
 
     # Mapping target atribut
+    df_merged['CircuitName'] = df_merged[event_col]
     df_merged['DriverAbbreviation'] = df_merged[driver_col]
     df_merged['TeamName'] = df_merged[team_col]
     df_merged['GridPosition'] = df_merged[grid_col]
@@ -54,7 +56,7 @@ def process_data():
     
     # --- Finalisasi Data ---
     # Finalisasi seleksi variabel untuk penggunaan model Machine Learning
-    output_columns = ['Season', 'Round', 'DriverAbbreviation', 'TeamName', 'GridPosition', 'FinalPosition']
+    output_columns = ['Season', 'Round', 'CircuitName', 'DriverAbbreviation', 'TeamName', 'GridPosition', 'FinalPosition']
     df_final = df_merged[output_columns]
     
     output_path = os.path.join(DATA_DIR, 'f1_processed.csv')

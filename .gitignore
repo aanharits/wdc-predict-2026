@@ -9,3 +9,5 @@ data/f1_cache/
 
 # OS files
 .DS_Store
+
+models/*.pkl

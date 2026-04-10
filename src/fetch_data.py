@@ -11,11 +11,11 @@ CACHE_DIR = os.path.join(DATA_DIR, 'f1_cache')
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-# Enable cache fastf1 supaya ga install ulang
+# Enable cache fastf1 
 fastf1.Cache.enable_cache(CACHE_DIR)
 
 def fetch_and_clean_f1_data(seasons):
-    # Variabel array penampung data hasil
+    # Array buat nampung result data
     race_results_list = []
     quali_results_list = []
     
@@ -35,8 +35,6 @@ def fetch_and_clean_f1_data(seasons):
                 # --- 1. Data Qualifying ---
                 try:
                     quali_session = fastf1.get_session(year, round_num, 'Q')
-                    
-                    # Membatasi pemuatan modul agar eksekusi data dasar berjalan sangat cepat
                     quali_session.load(telemetry=False, laps=False, weather=False)
                     
                     if quali_session.results is not None and not quali_session.results.empty:
@@ -72,17 +70,16 @@ def fetch_and_clean_f1_data(seasons):
 
     print("\nMengkonsolidasi struktur array...")
     
-    # Mengekspor Raw Data Race Result
+    # Export Raw Data Race Result
     if race_results_list:
         final_race_df = pd.concat(race_results_list, ignore_index=True)
-        # Menghapus struktur kolom yang seluruh datanya direkam sebatas NaN
         final_race_df = final_race_df.dropna(how='all', axis=1)
         
         race_csv_path = os.path.join(DATA_DIR, 'race_results.csv')
         final_race_df.to_csv(race_csv_path, index=False)
         print(f"Data balapan disimpan ke: {race_csv_path} ({len(final_race_df)} baris)")
         
-    # Mengekspor Raw Data Qualifying Result
+    # Export Raw Data Qualifying Result
     if quali_results_list:
         final_quali_df = pd.concat(quali_results_list, ignore_index=True)
         final_quali_df = final_quali_df.dropna(how='all', axis=1)

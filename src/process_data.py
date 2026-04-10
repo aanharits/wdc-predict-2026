@@ -1,12 +1,11 @@
 import pandas as pd
 import os
 
-# Konfigurasi path utama script
+# Konfigurasi path 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
 def process_data():
-    # Mengambil relasi dokumen data dasar
     quali_path = os.path.join(DATA_DIR, 'qualifying_results.csv')
     race_path = os.path.join(DATA_DIR, 'race_results.csv')
     
@@ -46,16 +45,16 @@ def process_data():
     df_merged['FinalPosition'] = df_merged[final_pos_col]
     
     # --- Data Cleaning ---;
-    # Konversi result atribut posisi dari tipe String menjadi Integer/Numerik.
+    # Convert result atribut posisi dari tipe String menjadi Integer/Numerik.
     df_merged['FinalPosition'] = pd.to_numeric(df_merged['FinalPosition'], errors='coerce')
     df_merged['GridPosition'] = pd.to_numeric(df_merged['GridPosition'], errors='coerce')
     
-    # Menggunakan metode imputasi di mana tipe record NaN (DNS, DNF, absen, dsb) didefault ke urutan 20.
+    # Convert tipe record NaN (DNS, DNF, absen, dsb) default ke urutan 20.
     df_merged['FinalPosition'] = df_merged['FinalPosition'].fillna(20).astype(int)
     df_merged['GridPosition'] = df_merged['GridPosition'].fillna(20).astype(int)
     
     # --- Finalisasi Data ---
-    # Finalisasi seleksi variabel untuk penggunaan model Machine Learning
+    # Finalisasi seleksi variabel untuk penggunaan model
     output_columns = ['Season', 'Round', 'CircuitName', 'DriverAbbreviation', 'TeamName', 'GridPosition', 'FinalPosition']
     df_final = df_merged[output_columns]
     
